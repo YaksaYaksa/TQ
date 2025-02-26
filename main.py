@@ -109,23 +109,7 @@ async def edit_with_retry(bot, chat_id, message_id, text, reply_markup=None, par
                 logger.error("Не удалось отредактировать сообщение после всех попыток.")
                 return False
 
-# Функция для отправки фото с повторными попытками
-async def send_photo_with_retry(bot, chat_id, photo, caption=None, reply_markup=None, retries=3, delay=1):
-    for attempt in range(retries):
-        try:
-            logger.info(f"Попытка {attempt + 1} отправить фото в чат {chat_id}...")
-            msg = await bot.send_photo(chat_id=chat_id, photo=photo, caption=caption, reply_markup=reply_markup)
-            logger.info("Фото успешно отправлено.")
-            return msg
-        except TimedOut as e:
-            logger.warning(f"Тайм-аут на попытке {attempt + 1}: {str(e)}")
-            if attempt < retries - 1:
-                await asyncio.sleep(delay)
-            else:
-                logger.error("Все попытки отправки фото исчерпаны.")
-                return None
-
-# Команда /start с локальным изображением
+# Команда /start без изображения
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.message.from_user.id)
     chat_id = update.message.chat_id
@@ -139,15 +123,12 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "✨ Что дальше? Выбери действие ниже:"
     )
     
-    welcome_image_path = r"C:\Users\home\Desktop\tq\welcome_image.png"
-    with open(welcome_image_path, "rb") as photo_file:
-        msg = await send_photo_with_retry(
-            context.bot,
-            chat_id,
-            photo=photo_file,
-            caption=welcome_text,
-            reply_markup=get_main_menu(user_id)
-        )
+    msg = await send_with_retry(
+        context.bot,
+        chat_id,
+        welcome_text,
+        reply_markup=get_main_menu(user_id)
+    )
     if msg:
         context.user_data["last_message_id"] = msg.message_id
 
